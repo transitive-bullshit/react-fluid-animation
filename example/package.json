@@ -1,0 +1,21 @@
+{
+  "name": "react-fluid-animation-example",
+  "homepage": "https://transitive-bullshit.github.io/react-fluid-animation",
+  "version": "0.0.0",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "prop-types": "^15.6.2",
+    "react": "^16.6.3",
+    "react-dom": "^16.6.3",
+    "react-fluid-animation": "link:..",
+    "react-github-corner": "^2.3.0",
+    "react-scripts": "^1.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}
