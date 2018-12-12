@@ -42,7 +42,7 @@ export default class App extends Component {
         </div>
 
         <GitHubCorner
-          href='https://github.com/transitive-bullshit/react-fluid-gallery'
+          href='https://github.com/transitive-bullshit/react-fluid-animation'
           bannerColor='#70B7FD'
         />
       </div>

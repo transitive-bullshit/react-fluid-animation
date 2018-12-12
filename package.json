@@ -12,6 +12,14 @@
     "node": ">=8",
     "npm": ">=5"
   },
+  "keywords": [
+    "react",
+    "fluid",
+    "animation",
+    "webgl",
+    "gpgpu",
+    "flow"
+  ],
   "scripts": {
     "prebuild": "yarn run clean",
     "build": "babel src -s -d dist",
@@ -26,7 +34,6 @@
     "deploy": "gh-pages -d example/build"
   },
   "dependencies": {
-    "is-video": "^1.0.1",
     "raf": "^3.4.1",
     "react-sizeme": "^2.5.2"
   },
