@@ -4,12 +4,13 @@ import PropTypes from 'prop-types'
 import raf from 'raf'
 import sizeMe from 'react-sizeme'
 
-import FluidAnimation from './fluid-animation'
+import FluidAnimation, { defaultConfig } from './fluid-animation'
 
 class ReactFluidAnimation extends Component {
   static propTypes = {
-    content: PropTypes.string.isRequired,
+    config: PropTypes.object,
     style: PropTypes.object,
+    animationRef: PropTypes.func,
     size: PropTypes.shape({
       width: PropTypes.number,
       height: PropTypes.number
@@ -17,11 +18,23 @@ class ReactFluidAnimation extends Component {
   }
 
   static defaultProps = {
+    config: defaultConfig,
     style: { }
+  }
+
+  get animation() {
+    return this._animation
   }
 
   componentWillReceiveProps(props) {
     this._onResize()
+
+    if (props.config) {
+      this._animation.config = {
+        ...props.config,
+        defaultConfig
+      }
+    }
   }
 
   componentDidMount() {
@@ -40,7 +53,8 @@ class ReactFluidAnimation extends Component {
 
   render() {
     const {
-      content,
+      config,
+      animationRef,
       style,
       size,
       ...rest
@@ -113,15 +127,20 @@ class ReactFluidAnimation extends Component {
 
   _reset(props) {
     const {
-      content
+      animationRef,
+      config
     } = props
 
     this._onResize()
 
     this._animation = new FluidAnimation({
       canvas: this._canvas,
-      content
+      config
     })
+
+    if (animationRef) {
+      animationRef(this._animation)
+    }
   }
 }
 

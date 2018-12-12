@@ -3,14 +3,14 @@ import getGLContext from './get-gl-context'
 
 import shaders from './shaders'
 
-const config = {
-  TEXTURE_DOWNSAMPLE: 1,
-  DENSITY_DISSIPATION: 0.98,
-  VELOCITY_DISSIPATION: 0.99,
-  PRESSURE_DISSIPATION: 0.8,
-  PRESSURE_ITERATIONS: 25,
-  CURL: 30,
-  SPLAT_RADIUS: 0.005
+export const defaultConfig = {
+  textureDownsample: 1,
+  densityDissipation: 0.98,
+  velocityDissipation: 0.99,
+  pressureDissipation: 0.8,
+  pressureIterations: 25,
+  curl: 30,
+  splatRadius: 0.005
 }
 
 class Pointer {
@@ -29,10 +29,16 @@ class Pointer {
 export default class FluidAnimation {
   constructor(opts) {
     const {
-      canvas
+      canvas,
+      config = {
+        ...defaultConfig,
+        ...opts.config
+      }
     } = opts
 
     this._canvas = canvas
+    this._config = config
+
     this._pointers = [ new Pointer() ]
     this._splatStack = []
 
@@ -46,6 +52,14 @@ export default class FluidAnimation {
 
     this._time = Date.now()
     this._multipleSplats(parseInt(Math.random() * 20) + 5)
+  }
+
+  get config() {
+    return this._config
+  }
+
+  set config(config) {
+    this._config = config
   }
 
   _initPrograms() {
@@ -82,7 +96,6 @@ export default class FluidAnimation {
   }
 
   onMouseMove = (e) => {
-    console.log(e.offsetX, e.offsetY)
     this._pointers[0].moved = this._pointers[0].down
     this._pointers[0].dx = (e.offsetX - this._pointers[0].x) * 10.0
     this._pointers[0].dy = (e.offsetY - this._pointers[0].y) * 10.0
@@ -151,8 +164,8 @@ export default class FluidAnimation {
       }
     }
 
-    this._textureWidth = gl.drawingBufferWidth >> config.TEXTURE_DOWNSAMPLE
-    this._textureHeight = gl.drawingBufferHeight >> config.TEXTURE_DOWNSAMPLE
+    this._textureWidth = gl.drawingBufferWidth >> this._config.textureDownsample
+    this._textureHeight = gl.drawingBufferHeight >> this._config.textureDownsample
 
     const texType = ext.halfFloatTexType
     const rgba = ext.formatRGBA
@@ -247,7 +260,7 @@ export default class FluidAnimation {
       1.0 - y / this._canvas.height
     )
     gl.uniform3f(this._programs.splat.uniforms.color, dx, -dy, 1.0)
-    gl.uniform1f(this._programs.splat.uniforms.radius, config.SPLAT_RADIUS)
+    gl.uniform1f(this._programs.splat.uniforms.radius, this._config.splatRadius)
     this._blit(this._velocity.write[1])
     this._velocity.swap()
 
@@ -260,6 +273,10 @@ export default class FluidAnimation {
     )
     this._blit(this._density.write[1])
     this._density.swap()
+  }
+
+  addSplats(amount) {
+    this._splatStack.push(amount)
   }
 
   _multipleSplats(amount) {
@@ -294,7 +311,7 @@ export default class FluidAnimation {
     gl.uniform1f(this._programs.advection.uniforms.dt, dt)
     gl.uniform1f(
       this._programs.advection.uniforms.dissipation,
-      config.VELOCITY_DISSIPATION
+      this._config.velocityDissipation
     )
     this._blit(this._velocity.write[1])
     this._velocity.swap()
@@ -303,7 +320,7 @@ export default class FluidAnimation {
     gl.uniform1i(this._programs.advection.uniforms.uSource, this._density.read[2])
     gl.uniform1f(
       this._programs.advection.uniforms.dissipation,
-      config.DENSITY_DISSIPATION
+      this._config.densityDissipation
     )
     this._blit(this._density.write[1])
     this._density.swap()
@@ -333,7 +350,7 @@ export default class FluidAnimation {
     )
     gl.uniform1i(this._programs.vorticity.uniforms.uVelocity, this._velocity.read[2])
     gl.uniform1i(this._programs.vorticity.uniforms.uCurl, this._curl[2])
-    gl.uniform1f(this._programs.vorticity.uniforms.curl, config.CURL)
+    gl.uniform1f(this._programs.vorticity.uniforms.curl, this._config.curl)
     gl.uniform1f(this._programs.vorticity.uniforms.dt, dt)
     this._blit(this._velocity.write[1])
     this._velocity.swap()
@@ -352,7 +369,7 @@ export default class FluidAnimation {
     gl.activeTexture(gl.TEXTURE0 + pressureTexId)
     gl.bindTexture(gl.TEXTURE_2D, this._pressure.read[0])
     gl.uniform1i(this._programs.clear.uniforms.uTexture, pressureTexId)
-    gl.uniform1f(this._programs.clear.uniforms.value, config.PRESSURE_DISSIPATION)
+    gl.uniform1f(this._programs.clear.uniforms.value, this._config.pressureDissipation)
     this._blit(this._pressure.write[1])
     this._pressure.swap()
 
@@ -366,7 +383,7 @@ export default class FluidAnimation {
     pressureTexId = this._pressure.read[2]
     gl.uniform1i(this._programs.pressure.uniforms.uPressure, pressureTexId)
     gl.activeTexture(gl.TEXTURE0 + pressureTexId)
-    for (let i = 0; i < config.PRESSURE_ITERATIONS; i++) {
+    for (let i = 0; i < this._config.pressureIterations; i++) {
       gl.bindTexture(gl.TEXTURE_2D, this._pressure.read[0])
       this._blit(this._pressure.write[1])
       this._pressure.swap()
