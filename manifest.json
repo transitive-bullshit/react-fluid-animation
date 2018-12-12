@@ -1,0 +1,8 @@
+{
+  "short_name": "react-fluid-gallery",
+  "name": "react-fluid-gallery",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
