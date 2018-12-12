@@ -121,7 +121,7 @@ export default class App extends Component {
             path='splatRadius'
             label='Splat Radius'
             min={0.0001}
-            max={0.05}
+            max={0.02}
           />
 
           <DatButton
