@@ -2,6 +2,7 @@ import advectionManualFiltering from './advection-manual-filtering'
 import advection from './advection'
 import clear from './clear'
 import curl from './curl'
+import displace from './displace'
 import display from './display'
 import divergence from './divergence'
 import gradientSubtract from './gradient-subtract'
@@ -15,6 +16,7 @@ export default {
   advection,
   clear,
   curl,
+  displace,
   display,
   divergence,
   gradientSubtract,

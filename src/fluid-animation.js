@@ -1,5 +1,6 @@
 import GLProgram from './gl-program'
 import getGLContext from './get-gl-context'
+import loadTexture from './load-texture'
 
 import shaders from './shaders'
 
@@ -30,6 +31,7 @@ export default class FluidAnimation {
   constructor(opts) {
     const {
       canvas,
+      content,
       config = {
         ...defaultConfig,
         ...opts.config
@@ -50,7 +52,13 @@ export default class FluidAnimation {
     this._initBlit()
     this.resize()
 
+    if (content) {
+      this._content = loadTexture(gl, 0, content)
+      console.log(this._content)
+    }
+
     this._time = Date.now()
+    this._timer = 0
     this._multipleSplats(parseInt(Math.random() * 20) + 5)
   }
 
@@ -79,6 +87,9 @@ export default class FluidAnimation {
     this._programs.vorticity = new GLProgram(gl, shaders.vert, shaders.vorticity)
     this._programs.pressure = new GLProgram(gl, shaders.vert, shaders.pressure)
     this._programs.gradientSubtract = new GLProgram(gl, shaders.vert, shaders.gradientSubtract)
+
+    // TODO: optional
+    this._programs.displace = new GLProgram(gl, shaders.vert, shaders.displace)
   }
 
   resize() {
@@ -295,6 +306,7 @@ export default class FluidAnimation {
 
     const dt = Math.min((Date.now() - this._time) / 1000, 0.016)
     this._time = Date.now()
+    this._timer += 0.0001
 
     gl.viewport(0, 0, this._textureWidth, this._textureHeight)
 
@@ -401,8 +413,23 @@ export default class FluidAnimation {
     this._velocity.swap()
 
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
-    this._programs.display.bind()
-    gl.uniform1i(this._programs.display.uniforms.uTexture, this._density.read[2])
-    this._blit(null)
+
+    if (this._content) {
+      this._programs.displace.bind()
+      gl.bindTexture(gl.TEXTURE_2D, this._content)
+
+      // TODO: this is really not working
+      gl.uniform1i(this._programs.displace.uniforms.uTexture, 0)
+      gl.uniform1i(this._programs.displace.uniforms.uDisplacementMap, this._density.read[2])
+      gl.uniform1f(this._programs.displace.uniforms.uTime, this._timer)
+
+      gl.bindTexture(gl.TEXTURE_2D, this._velocity.read[0])
+
+      this._blit(null)
+    } else {
+      this._programs.display.bind()
+      gl.uniform1i(this._programs.display.uniforms.uTexture, this._density.read[2])
+      this._blit(null)
+    }
   }
 }

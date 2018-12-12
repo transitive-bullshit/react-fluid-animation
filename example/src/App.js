@@ -6,6 +6,8 @@ import DatGui, { DatNumber, DatSelect, DatButton } from 'react-dat-gui'
 import FluidAnimation from 'react-fluid-animation'
 import GitHubCorner from 'react-github-corner'
 
+// import image from './lena.png'
+
 const defaultConfig = {
   textureDownsample: 1,
   densityDissipation: 0.98,
@@ -37,7 +39,6 @@ export default class App extends Component {
         <FluidAnimation
           config={config}
           animationRef={this._animationRef}
-          onClick={this._onClickRandomSplats}
         />
 
         <div
