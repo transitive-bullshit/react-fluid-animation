@@ -37,6 +37,7 @@ export default class App extends Component {
         <FluidAnimation
           config={config}
           animationRef={this._animationRef}
+          onClick={this._onClickRandomSplats}
         />
 
         <div
