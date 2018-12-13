@@ -23,10 +23,6 @@ class ReactFluidAnimation extends Component {
     style: { }
   }
 
-  get animation() {
-    return this._animation
-  }
-
   componentWillReceiveProps(props) {
     this._onResize()
 
@@ -144,6 +140,7 @@ class ReactFluidAnimation extends Component {
 
     if (animationRef) {
       animationRef(this._animation)
+      this._animation.addRandomSplats(parseInt(Math.random() * 20) + 5)
     }
   }
 }

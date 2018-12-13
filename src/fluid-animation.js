@@ -1,6 +1,5 @@
 import GLProgram from './gl-program'
 import getGLContext from './get-gl-context'
-import loadTexture from './load-texture'
 
 import shaders from './shaders'
 
@@ -31,7 +30,6 @@ export default class FluidAnimation {
   constructor(opts) {
     const {
       canvas,
-      content,
       config = {
         ...defaultConfig,
         ...opts.config
@@ -52,14 +50,8 @@ export default class FluidAnimation {
     this._initBlit()
     this.resize()
 
-    if (content) {
-      this._content = loadTexture(gl, 0, content)
-      console.log(this._content)
-    }
-
     this._time = Date.now()
     this._timer = 0
-    this._multipleSplats(parseInt(Math.random() * 20) + 5)
   }
 
   get config() {
@@ -70,26 +62,30 @@ export default class FluidAnimation {
     this._config = config
   }
 
-  _initPrograms() {
-    const gl = this._gl
-    const ext = this._ext
+  get width() {
+    return this._canvas.width
+  }
 
-    this._programs = { }
-    this._programs.clear = new GLProgram(gl, shaders.vert, shaders.clear)
-    this._programs.display = new GLProgram(gl, shaders.vert, shaders.display)
-    this._programs.splat = new GLProgram(gl, shaders.vert, shaders.splat)
-    this._programs.advection = new GLProgram(gl, shaders.vert, ext.supportLinearFiltering
-      ? shaders.advection
-      : shaders.advectionManualFiltering
-    )
-    this._programs.divergence = new GLProgram(gl, shaders.vert, shaders.divergence)
-    this._programs.curl = new GLProgram(gl, shaders.vert, shaders.curl)
-    this._programs.vorticity = new GLProgram(gl, shaders.vert, shaders.vorticity)
-    this._programs.pressure = new GLProgram(gl, shaders.vert, shaders.pressure)
-    this._programs.gradientSubtract = new GLProgram(gl, shaders.vert, shaders.gradientSubtract)
+  get height() {
+    return this._canvas.height
+  }
 
-    // TODO: optional
-    this._programs.displace = new GLProgram(gl, shaders.vert, shaders.displace)
+  addSplat(splat) {
+    this._splatStack.push([ splat ])
+  }
+
+  addSplats(splats) {
+    this._splatStack.push(Array.isArray(splats) ? splats : [ splats ])
+  }
+
+  addRandomSplats(count) {
+    const splats = []
+
+    for (let i = 0; i < count; ++i) {
+      splats.push(this._getRandomSplat())
+    }
+
+    this.addSplats(splats)
   }
 
   resize() {
@@ -125,6 +121,25 @@ export default class FluidAnimation {
 
   onMouseUp = (e) => {
     this._pointers[0].down = false
+  }
+
+  _initPrograms() {
+    const gl = this._gl
+    const ext = this._ext
+
+    this._programs = { }
+    this._programs.clear = new GLProgram(gl, shaders.vert, shaders.clear)
+    this._programs.display = new GLProgram(gl, shaders.vert, shaders.display)
+    this._programs.splat = new GLProgram(gl, shaders.vert, shaders.splat)
+    this._programs.advection = new GLProgram(gl, shaders.vert, ext.supportLinearFiltering
+      ? shaders.advection
+      : shaders.advectionManualFiltering
+    )
+    this._programs.divergence = new GLProgram(gl, shaders.vert, shaders.divergence)
+    this._programs.curl = new GLProgram(gl, shaders.vert, shaders.curl)
+    this._programs.vorticity = new GLProgram(gl, shaders.vert, shaders.vorticity)
+    this._programs.pressure = new GLProgram(gl, shaders.vert, shaders.pressure)
+    this._programs.gradientSubtract = new GLProgram(gl, shaders.vert, shaders.gradientSubtract)
   }
 
   _initFramebuffers() {
@@ -238,17 +253,9 @@ export default class FluidAnimation {
     const gl = this._gl
 
     gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer())
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array([-1, -1, -1, 1, 1, 1, 1, -1]),
-      gl.STATIC_DRAW
-    )
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, -1, 1, 1, 1, 1, -1]), gl.STATIC_DRAW)
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer())
-    gl.bufferData(
-      gl.ELEMENT_ARRAY_BUFFER,
-      new Uint16Array([0, 1, 2, 0, 2, 3]),
-      gl.STATIC_DRAW
-    )
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array([0, 1, 2, 0, 2, 3]), gl.STATIC_DRAW)
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
     gl.enableVertexAttribArray(0)
   }
@@ -265,40 +272,47 @@ export default class FluidAnimation {
     this._programs.splat.bind()
     gl.uniform1i(this._programs.splat.uniforms.uTarget, this._velocity.read[2])
     gl.uniform1f(this._programs.splat.uniforms.aspectRatio, this._canvas.width / this._canvas.height)
-    gl.uniform2f(
-      this._programs.splat.uniforms.point,
-      x / this._canvas.width,
-      1.0 - y / this._canvas.height
-    )
+    gl.uniform2f(this._programs.splat.uniforms.point, x / this._canvas.width, 1.0 - y / this._canvas.height)
     gl.uniform3f(this._programs.splat.uniforms.color, dx, -dy, 1.0)
     gl.uniform1f(this._programs.splat.uniforms.radius, this._config.splatRadius)
     this._blit(this._velocity.write[1])
     this._velocity.swap()
 
     gl.uniform1i(this._programs.splat.uniforms.uTarget, this._density.read[2])
-    gl.uniform3f(
-      this._programs.splat.uniforms.color,
-      color[0] * 0.3,
-      color[1] * 0.3,
-      color[2] * 0.3
-    )
+    gl.uniform3f(this._programs.splat.uniforms.color, color[0] * 0.3, color[1] * 0.3, color[2] * 0.3)
     this._blit(this._density.write[1])
     this._density.swap()
   }
 
-  addSplats(amount) {
-    this._splatStack.push(amount)
+  _addSplat(splat) {
+    const { x, y, dx, dy, color } = splat
+
+    if (x === undefined) return
+    if (y === undefined) return
+    if (dx === undefined) return
+    if (dy === undefined) return
+    if (color === undefined) return
+
+    this._splat(x, y, dx, dy, color)
   }
 
-  _multipleSplats(amount) {
-    for (let i = 0; i < amount; ++i) {
-      const color = [ Math.random() * 10, Math.random() * 10, Math.random() * 10 ]
-      const x = this._canvas.width * Math.random()
-      const y = this._canvas.height * Math.random()
-      const dx = 1000 * (Math.random() - 0.5)
-      const dy = 1000 * (Math.random() - 0.5)
-      this._splat(x, y, dx, dy, color)
+  _addSplats(splats) {
+    console.log(splats)
+
+    for (const splat of splats) {
+      console.log(splat)
+      this._addSplat(splat)
     }
+  }
+
+  _getRandomSplat() {
+    const color = [ Math.random() * 10, Math.random() * 10, Math.random() * 10 ]
+    const x = this._canvas.width * Math.random()
+    const y = this._canvas.height * Math.random()
+    const dx = 1000 * (Math.random() - 0.5)
+    const dy = 1000 * (Math.random() - 0.5)
+
+    return { x, y, dx, dy, color }
   }
 
   update() {
@@ -308,16 +322,19 @@ export default class FluidAnimation {
     this._time = Date.now()
     this._timer += 0.0001
 
-    gl.viewport(0, 0, this._textureWidth, this._textureHeight)
+    const w = this._textureWidth
+    const h = this._textureHeight
+    const iW = 1.0 / w
+    const iH = 1.0 / h
 
-    if (this._splatStack.length > 0) this._multipleSplats(this._splatStack.pop())
+    gl.viewport(0, 0, w, h)
+
+    if (this._splatStack.length > 0) {
+      this._addSplats(this._splatStack.pop())
+    }
 
     this._programs.advection.bind()
-    gl.uniform2f(
-      this._programs.advection.uniforms.texelSize,
-      1.0 / this._textureWidth,
-      1.0 / this._textureHeight
-    )
+    gl.uniform2f(this._programs.advection.uniforms.texelSize, iW, iH)
     gl.uniform1i(this._programs.advection.uniforms.uVelocity, this._velocity.read[2])
     gl.uniform1i(this._programs.advection.uniforms.uSource, this._velocity.read[2])
     gl.uniform1f(this._programs.advection.uniforms.dt, dt)
@@ -346,20 +363,12 @@ export default class FluidAnimation {
     }
 
     this._programs.curl.bind()
-    gl.uniform2f(
-      this._programs.curl.uniforms.texelSize,
-      1.0 / this._textureWidth,
-      1.0 / this._textureHeight
-    )
+    gl.uniform2f(this._programs.curl.uniforms.texelSize, iW, iH)
     gl.uniform1i(this._programs.curl.uniforms.uVelocity, this._velocity.read[2])
     this._blit(this._curl[1])
 
     this._programs.vorticity.bind()
-    gl.uniform2f(
-      this._programs.vorticity.uniforms.texelSize,
-      1.0 / this._textureWidth,
-      1.0 / this._textureHeight
-    )
+    gl.uniform2f(this._programs.vorticity.uniforms.texelSize, iW, iH)
     gl.uniform1i(this._programs.vorticity.uniforms.uVelocity, this._velocity.read[2])
     gl.uniform1i(this._programs.vorticity.uniforms.uCurl, this._curl[2])
     gl.uniform1f(this._programs.vorticity.uniforms.curl, this._config.curl)
@@ -368,11 +377,7 @@ export default class FluidAnimation {
     this._velocity.swap()
 
     this._programs.divergence.bind()
-    gl.uniform2f(
-      this._programs.divergence.uniforms.texelSize,
-      1.0 / this._textureWidth,
-      1.0 / this._textureHeight
-    )
+    gl.uniform2f(this._programs.divergence.uniforms.texelSize, iW, iH)
     gl.uniform1i(this._programs.divergence.uniforms.uVelocity, this._velocity.read[2])
     this._blit(this._divergence[1])
 
@@ -386,11 +391,7 @@ export default class FluidAnimation {
     this._pressure.swap()
 
     this._programs.pressure.bind()
-    gl.uniform2f(
-      this._programs.pressure.uniforms.texelSize,
-      1.0 / this._textureWidth,
-      1.0 / this._textureHeight
-    )
+    gl.uniform2f(this._programs.pressure.uniforms.texelSize, iW, iH)
     gl.uniform1i(this._programs.pressure.uniforms.uDivergence, this._divergence[2])
     pressureTexId = this._pressure.read[2]
     gl.uniform1i(this._programs.pressure.uniforms.uPressure, pressureTexId)
@@ -402,34 +403,15 @@ export default class FluidAnimation {
     }
 
     this._programs.gradientSubtract.bind()
-    gl.uniform2f(
-      this._programs.gradientSubtract.uniforms.texelSize,
-      1.0 / this._textureWidth,
-      1.0 / this._textureHeight
-    )
+    gl.uniform2f(this._programs.gradientSubtract.uniforms.texelSize, iW, iH)
     gl.uniform1i(this._programs.gradientSubtract.uniforms.uPressure, this._pressure.read[2])
     gl.uniform1i(this._programs.gradientSubtract.uniforms.uVelocity, this._velocity.read[2])
     this._blit(this._velocity.write[1])
     this._velocity.swap()
 
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
-
-    if (this._content) {
-      this._programs.displace.bind()
-      gl.bindTexture(gl.TEXTURE_2D, this._content)
-
-      // TODO: this is really not working
-      gl.uniform1i(this._programs.displace.uniforms.uTexture, 0)
-      gl.uniform1i(this._programs.displace.uniforms.uDisplacementMap, this._density.read[2])
-      gl.uniform1f(this._programs.displace.uniforms.uTime, this._timer)
-
-      gl.bindTexture(gl.TEXTURE_2D, this._velocity.read[0])
-
-      this._blit(null)
-    } else {
-      this._programs.display.bind()
-      gl.uniform1i(this._programs.display.uniforms.uTexture, this._density.read[2])
-      this._blit(null)
-    }
+    this._programs.display.bind()
+    gl.uniform1i(this._programs.display.uniforms.uTexture, this._density.read[2])
+    this._blit(null)
   }
 }
