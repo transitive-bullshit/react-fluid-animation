@@ -297,10 +297,7 @@ export default class FluidAnimation {
   }
 
   _addSplats(splats) {
-    console.log(splats)
-
     for (const splat of splats) {
-      console.log(splat)
       this._addSplat(splat)
     }
   }
