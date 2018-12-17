@@ -74,6 +74,9 @@ class ReactFluidAnimation extends Component {
           onMouseDown={this._onMouseDown}
           onMouseMove={this._onMouseMove}
           onMouseUp={this._onMouseUp}
+          onTouchStart={this._onTouchStart}
+          onTouchMove={this._onTouchMove}
+          onTouchEnd={this._onTouchEnd}
           style={{
             width: '100%',
             height: '100%'
@@ -104,6 +107,21 @@ class ReactFluidAnimation extends Component {
   _onMouseUp = (event) => {
     event.preventDefault()
     this._animation.onMouseUp(event.nativeEvent)
+  }
+
+  _onTouchStart = (event) => {
+    event.preventDefault()
+    this._animation.onTouchStart(event.nativeEvent)
+  }
+
+  _onTouchMove = (event) => {
+    event.preventDefault()
+    this._animation.onTouchMove(event.nativeEvent)
+  }
+
+  _onTouchEnd = (event) => {
+    event.preventDefault()
+    this._animation.onTouchEnd(event.nativeEvent)
   }
 
   _onResize = () => {

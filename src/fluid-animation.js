@@ -123,6 +123,34 @@ export default class FluidAnimation {
     this._pointers[0].down = false
   }
 
+  onTouchStart = (e) => {
+    for (let i = 0; i < e.touches.length; ++i) {
+      this._pointers[i].down = true
+      this._pointers[i].color = [
+        Math.random() + 0.2,
+        Math.random() + 0.2,
+        Math.random() + 0.2
+      ]
+    }
+  }
+
+  onTouchMove = (e) => {
+    for (let i = 0; i < e.touches.length; ++i) {
+      const touch = e.touches[i]
+      this._pointers[i].moved = this._pointers[i].down
+      this._pointers[i].dx = (touch.clientX - this._pointers[i].x) * 10.0
+      this._pointers[i].dy = (touch.clientY - this._pointers[i].y) * 10.0
+      this._pointers[i].x = touch.clientX
+      this._pointers[i].y = touch.clientY
+    }
+  }
+
+  onTouchEnd = (e) => {
+    for (let i = 0; i < e.touches.length; ++i) {
+      this._pointers[i].down = false
+    }
+  }
+
   _initPrograms() {
     const gl = this._gl
     const ext = this._ext
