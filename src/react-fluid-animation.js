@@ -110,17 +110,14 @@ class ReactFluidAnimation extends Component {
   }
 
   _onTouchStart = (event) => {
-    event.preventDefault()
     this._animation.onTouchStart(event.nativeEvent)
   }
 
   _onTouchMove = (event) => {
-    event.preventDefault()
     this._animation.onTouchMove(event.nativeEvent)
   }
 
   _onTouchEnd = (event) => {
-    event.preventDefault()
     this._animation.onTouchEnd(event.nativeEvent)
   }
 
