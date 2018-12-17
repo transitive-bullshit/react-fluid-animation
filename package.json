@@ -1,6 +1,6 @@
 {
   "name": "react-fluid-animation",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Fluid media animation for React powered by WebGL.",
   "author": "transitive-bullshit",
   "license": "MIT",
