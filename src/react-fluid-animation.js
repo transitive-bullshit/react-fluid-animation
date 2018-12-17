@@ -140,7 +140,7 @@ class ReactFluidAnimation extends Component {
 
     if (animationRef) {
       animationRef(this._animation)
-      this._animation.addRandomSplats(parseInt(Math.random() * 20) + 5)
+      // this._animation.addRandomSplats(parseInt(Math.random() * 20) + 5)
     }
   }
 }
